@@ -62,23 +62,25 @@ class CsvExporter {
   static String _generateCsvContent(List<Expense> expenses) {
     final List<List<dynamic>> rows = [];
 
-    // Add header row
-    rows.add(['Date', 'Time', 'Description', 'Amount']);
+    // Add header row - only Date, Description, Amount (no time)
+    rows.add(['Date', 'Description', 'Amount']);
 
-    // Add expense rows
-    final dateFormat = DateFormat('yyyy-MM-dd');
-    final timeFormat = DateFormat('HH:mm:ss');
-
+    // Add expense rows with simple date format
     for (final expense in expenses) {
+      // Format date as simple string: "4-Nov-25"
+      final day = expense.timestamp.day;
+      final month = expense.timestamp.month;
+      final year = expense.timestamp.year % 100; // Last 2 digits of year
+      final dateStr = '$day-$month-$year';
+      
       rows.add([
-        dateFormat.format(expense.timestamp),
-        timeFormat.format(expense.timestamp),
+        dateStr,
         expense.description,
-        expense.amount.toStringAsFixed(2),
+        expense.amount.toInt().toString(), // Show as whole number
       ]);
     }
 
-    // Convert to CSV string
+    // Convert to CSV string with proper formatting
     return const ListToCsvConverter().convert(rows);
   }
 
@@ -118,16 +120,25 @@ class CsvExporter {
   static Future<Directory?> _getExportDirectory() async {
     try {
       if (Platform.isAndroid) {
-        // Try to get Downloads directory
-        final downloadsDir = Directory('/storage/emulated/0/Download');
-        if (await downloadsDir.exists()) {
-          return downloadsDir;
+        // Try multiple locations for better compatibility
+        final possiblePaths = [
+          '/storage/emulated/0/Download',
+          '/storage/emulated/0/Downloads', 
+          '/sdcard/Download',
+          '/sdcard/Downloads',
+        ];
+        
+        for (final path in possiblePaths) {
+          final dir = Directory(path);
+          if (await dir.exists()) {
+            return dir;
+          }
         }
 
-        // Fallback to external storage
+        // Create Downloads folder in external storage
         final externalDir = await getExternalStorageDirectory();
         if (externalDir != null) {
-          final downloadDir = Directory('${externalDir.path}/Download');
+          final downloadDir = Directory('${externalDir.path}/Downloads');
           if (!await downloadDir.exists()) {
             await downloadDir.create(recursive: true);
           }
@@ -147,23 +158,22 @@ class CsvExporter {
   static Future<bool> checkAndRequestPermissions() async {
     try {
       if (Platform.isAndroid) {
-        // Check current permission status
-        var status = await Permission.storage.status;
+        // For Android 11+ (API 30+), try MANAGE_EXTERNAL_STORAGE first
+        var manageStatus = await Permission.manageExternalStorage.status;
+        if (manageStatus.isDenied) {
+          manageStatus = await Permission.manageExternalStorage.request();
+        }
         
+        if (manageStatus.isGranted) {
+          return true;
+        }
+        
+        // Fallback to regular storage permission
+        var status = await Permission.storage.status;
         if (status.isDenied) {
-          // Request permission
           status = await Permission.storage.request();
         }
-
-        // For Android 11+ (API 30+), we might need MANAGE_EXTERNAL_STORAGE
-        if (status.isDenied || status.isPermanentlyDenied) {
-          var manageStatus = await Permission.manageExternalStorage.status;
-          if (manageStatus.isDenied) {
-            manageStatus = await Permission.manageExternalStorage.request();
-          }
-          return manageStatus.isGranted;
-        }
-
+        
         return status.isGranted;
       }
 

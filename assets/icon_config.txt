@@ -1,0 +1,4 @@
+This is a placeholder for the app icon.
+The icon should be a receipt/document icon in black and white theme.
+Since we cannot generate images directly, we'll use the default Flutter icon for now
+and you can replace it later with a custom icon using online icon generators.

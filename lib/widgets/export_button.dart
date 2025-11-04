@@ -121,7 +121,7 @@ class ExportButton extends StatelessWidget {
                     _InfoRow(
                       icon: Icons.folder,
                       label: 'Location:',
-                      value: 'Downloads folder',
+                      value: 'Downloads folder or File Manager',
                     ),
                   ],
                 ),

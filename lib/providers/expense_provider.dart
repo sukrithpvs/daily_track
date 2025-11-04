@@ -190,8 +190,8 @@ class ExpenseProvider extends ChangeNotifier {
       // Check permissions first
       final hasPermission = await CsvExporter.checkAndRequestPermissions();
       if (!hasPermission) {
-        _setError('Storage permission required for export');
-        return CsvExportResult.error('Storage permission denied');
+        _setError('Please grant storage permission in Settings > Apps > DailyTrack > Permissions');
+        return CsvExportResult.error('Storage permission denied. Please enable in app settings.');
       }
 
       // Get current month expenses

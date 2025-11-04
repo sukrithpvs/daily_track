@@ -18,8 +18,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Initialize the provider when the screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExpenseProvider>().initialize();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<ExpenseProvider>();
+      await provider.initialize();
+      // Load existing data
+      await provider.loadTodayExpenses();
     });
   }
 

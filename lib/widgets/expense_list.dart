@@ -258,10 +258,24 @@ class _ExpenseListItem extends StatelessWidget {
                 ),
                 
                 // Delete hint
-                Icon(
-                  Icons.more_vert,
-                  color: Colors.grey[400],
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.delete_outline,
+                        color: Colors.grey[400],
+                        size: 18,
+                      ),
+                      Text(
+                        'Hold',
+                        style: TextStyle(
+                          fontSize: 8,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
