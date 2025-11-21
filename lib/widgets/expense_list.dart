@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../providers/expense_provider.dart';
-import '../models/expense.dart';
+import '../providers/money_provider.dart';
+import '../models/transaction.dart';
 
+/// Widget that displays the list of transactions for today
 class ExpenseList extends StatelessWidget {
   const ExpenseList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExpenseProvider>(
+    return Consumer<MoneyProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: CircularProgressIndicator(
-                color: Colors.black,
-              ),
+              child: CircularProgressIndicator(color: Colors.black),
             ),
           );
         }
@@ -47,9 +46,9 @@ class ExpenseList extends StatelessWidget {
                   children: [
                     const Icon(Icons.receipt_long, color: Colors.black),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'Today\'s Expenses',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -58,25 +57,23 @@ class ExpenseList extends StatelessWidget {
                     const Spacer(),
                     Text(
                       '${provider.todayExpenses.length} item${provider.todayExpenses.length != 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
-              
+
               // Expense list
               Expanded(
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
                   itemCount: provider.todayExpenses.length,
                   itemBuilder: (context, index) {
-                    final expense = provider.todayExpenses[index];
+                    final transaction = provider.todayExpenses[index];
                     return _ExpenseListItem(
-                      expense: expense,
-                      onDelete: () => _showDeleteConfirmation(context, expense),
+                      transaction: transaction,
+                      onDelete: () =>
+                          _showDeleteConfirmation(context, transaction),
                     );
                   },
                 ),
@@ -118,10 +115,7 @@ class ExpenseList extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Add your first expense above',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
               ),
             ],
           ),
@@ -130,7 +124,10 @@ class ExpenseList extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, Expense expense) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    MoneyTransaction transaction,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -142,27 +139,24 @@ class ExpenseList extends StatelessWidget {
           ),
           title: const Text(
             'Delete Expense',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
           ),
           content: Text(
-            'Are you sure you want to delete "${expense.description}" (₹${expense.amount.toStringAsFixed(2)})?',
+            'Are you sure you want to delete "${transaction.description}" (₹${transaction.amount.toStringAsFixed(2)})?',
             style: const TextStyle(color: Colors.black),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[600],
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                context.read<ExpenseProvider>().deleteExpense(expense.id!);
+                context.read<MoneyProvider>().deleteTransaction(
+                  transaction.id!,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -178,27 +172,24 @@ class ExpenseList extends StatelessWidget {
 }
 
 class _ExpenseListItem extends StatelessWidget {
-  final Expense expense;
+  final MoneyTransaction transaction;
   final VoidCallback onDelete;
 
-  const _ExpenseListItem({
-    required this.expense,
-    required this.onDelete,
-  });
+  const _ExpenseListItem({required this.transaction, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
     final timeFormat = DateFormat('HH:mm');
     final currencyFormat = NumberFormat.currency(
       symbol: '₹',
-      decimalDigits: expense.amount == expense.amount.roundToDouble() ? 0 : 2,
+      decimalDigits: transaction.amount == transaction.amount.roundToDouble()
+          ? 0
+          : 2,
     );
 
     return Container(
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey, width: 0.5),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -219,7 +210,7 @@ class _ExpenseListItem extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    currencyFormat.format(expense.amount),
+                    currencyFormat.format(transaction.amount),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -227,16 +218,16 @@ class _ExpenseListItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Description and time
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        expense.description,
+                        transaction.description,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -247,16 +238,13 @@ class _ExpenseListItem extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        timeFormat.format(expense.timestamp),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        timeFormat.format(transaction.timestamp),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Delete hint
                 Container(
                   padding: const EdgeInsets.all(4),
@@ -269,10 +257,7 @@ class _ExpenseListItem extends StatelessWidget {
                       ),
                       Text(
                         'Hold',
-                        style: TextStyle(
-                          fontSize: 8,
-                          color: Colors.grey[400],
-                        ),
+                        style: TextStyle(fontSize: 8, color: Colors.grey[400]),
                       ),
                     ],
                   ),

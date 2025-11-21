@@ -54,7 +54,7 @@ class CsvExporter {
   ) async {
     final monthName = DateFormat('MMMM_yyyy').format(DateTime(year, month));
     final fileName = '$_filePrefix$monthName$_fileExtension';
-    
+
     return exportExpenses(expenses, customFileName: fileName);
   }
 
@@ -62,25 +62,23 @@ class CsvExporter {
   static String _generateCsvContent(List<Expense> expenses) {
     final List<List<dynamic>> rows = [];
 
-    // Add header row - only Date, Description, Amount (no time)
+    // Add header row
     rows.add(['Date', 'Description', 'Amount']);
 
-    // Add expense rows with simple date format
+    // Add expense rows with proper date format
+    final dateFormat = DateFormat('dd-MMM-yyyy'); // e.g., "22-Nov-2025"
+
     for (final expense in expenses) {
-      // Format date as simple string: "4-Nov-25"
-      final day = expense.timestamp.day;
-      final month = expense.timestamp.month;
-      final year = expense.timestamp.year % 100; // Last 2 digits of year
-      final dateStr = '$day-$month-$year';
-      
+      final dateStr = dateFormat.format(expense.timestamp);
+
       rows.add([
         dateStr,
         expense.description,
-        expense.amount.toInt().toString(), // Show as whole number
+        expense.amount.toInt().toString(),
       ]);
     }
 
-    // Convert to CSV string with proper formatting
+    // Convert to CSV string
     return const ListToCsvConverter().convert(rows);
   }
 
@@ -104,7 +102,7 @@ class CsvExporter {
     }
 
     // If all expenses are from the same day, use date
-    if (DateFormat('yyyy-MM-dd').format(firstDate) == 
+    if (DateFormat('yyyy-MM-dd').format(firstDate) ==
         DateFormat('yyyy-MM-dd').format(lastDate)) {
       final dateStr = DateFormat('yyyy-MM-dd').format(firstDate);
       return '${_filePrefix}$dateStr$_fileExtension';
@@ -123,11 +121,11 @@ class CsvExporter {
         // Try multiple locations for better compatibility
         final possiblePaths = [
           '/storage/emulated/0/Download',
-          '/storage/emulated/0/Downloads', 
+          '/storage/emulated/0/Downloads',
           '/sdcard/Download',
           '/sdcard/Downloads',
         ];
-        
+
         for (final path in possiblePaths) {
           final dir = Directory(path);
           if (await dir.exists()) {
@@ -163,17 +161,17 @@ class CsvExporter {
         if (manageStatus.isDenied) {
           manageStatus = await Permission.manageExternalStorage.request();
         }
-        
+
         if (manageStatus.isGranted) {
           return true;
         }
-        
+
         // Fallback to regular storage permission
         var status = await Permission.storage.status;
         if (status.isDenied) {
           status = await Permission.storage.request();
         }
-        
+
         return status.isGranted;
       }
 
@@ -224,7 +222,7 @@ class CsvExporter {
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
     final totalAmount = expenses.fold<double>(
-      0.0, 
+      0.0,
       (sum, expense) => sum + expense.amount,
     );
 
@@ -270,10 +268,7 @@ class CsvExportResult {
   }
 
   factory CsvExportResult.error(String message) {
-    return CsvExportResult._(
-      success: false,
-      errorMessage: message,
-    );
+    return CsvExportResult._(success: false, errorMessage: message);
   }
 }
 
@@ -297,19 +292,14 @@ class DateRange {
   final DateTime start;
   final DateTime end;
 
-  const DateRange({
-    required this.start,
-    required this.end,
-  });
+  const DateRange({required this.start, required this.end});
 
   Duration get duration => end.difference(start);
-  
-  bool get isSameDay => 
-      start.year == end.year && 
-      start.month == end.month && 
+
+  bool get isSameDay =>
+      start.year == end.year &&
+      start.month == end.month &&
       start.day == end.day;
-      
-  bool get isSameMonth => 
-      start.year == end.year && 
-      start.month == end.month;
+
+  bool get isSameMonth => start.year == end.year && start.month == end.month;
 }
